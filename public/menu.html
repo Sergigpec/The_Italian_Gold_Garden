@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="sergio_galán">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!--favicon: created with help of : https://realfavicongenerator.net/ -->
+
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <title>The Italian Gold Garden - Menú</title>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        :root {
+            --primary: #e63946;
+            --primary-dark: #c1121f;
+            --primary-light: #f8ad9d;
+            --secondary: #457b9d;
+            --background: #f4f1ea;
+            --text: #1d3557;
+            --border: #a8dadc;
+            --success: #2a9d8f;
+            --card-bg: #ffffff;
+            --warning: #e9c46a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-family: Arial, Helvetica, sans-serif;
+            margin-bottom: 0.5rem;
+        }
+
+        nav {
+            background-color: var(--primary-light);
+            padding: 0.8rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            overflow-x: auto;
+            white-space: nowrap;
+            /* Evita que se rompan en varias líneas */
+            scrollbar-width: none;
+        }
+
+        .nav-links li {
+            margin: 0 1rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            transition: opacity 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .cart-link {
+            position: relative;
+        }
+
+        #cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: var(--primary-dark);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .menu-category {
+            margin-bottom: 3rem;
+        }
+
+        .category-title {
+            font-size: 2rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .category-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100px;
+            height: 4px;
+            background-color: var(--primary-dark);
+        }
+
+
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .menu-item {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .item-image {
+            height: 200px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .menu-item:hover .item-image img {
+            transform: scale(1.05);
+        }
+
+        .item-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .item-name {
+            font-size: 1.3rem;
+            color: var(--primary-dark);
+            font-weight: bold;
+        }
+
+        .item-price {
+            font-size: 1.2rem;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .item-description {
+            color: #666;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
+
+        .item-tags {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tag {
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .tag-popular {
+            background-color: #ffd700;
+            color: #5e2d0b;
+        }
+
+        .tag-alcohol {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .item-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--primary-light);
+            border-radius: 50%;
+            background: none;
+            color: var(--primary);
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .quantity-btn:hover {
+            background-color: var(--primary-light);
+            color: white;
+        }
+
+        .quantity-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f5f5f5;
+            border-color: #ddd;
+            color: #999;
+        }
+
+        .quantity-btn:disabled:hover {
+            background-color: #f5f5f5;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .quantity {
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .add-to-cart {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .add-to-cart:hover {
+            background-color: var(--primary-dark);
+        }
+
+        footer {
+            text-align: center;
+            background-color: var(--primary);
+            color: white;
+            padding: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        /*Versión para moviles*/
+        @media (max-width: 600px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                width: 100%;
+                justify-content: space-around;
+            }
+
+            .menu-items {
+                grid-template-columns: 1fr;
+            }
+
+            .category-title {
+                font-size: 1.8rem;
+            }
+        }
+
+        .loading-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .loading-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+    </style>
+</head>
+
+<!-- En menu.html -->
+
+<body>
+
+    <!-- Cabecera común -->
+
+    <header id="main-header">
+        <h1>The Italian Gold Garden</h1>
+        <p>Menú Digital</p>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="#bebidas"> Bebidas</a></li>
+                <li><a href="#entrantes"> Entrantes</a></li>
+                <li><a href="#frituras"> Entrantes</a></li>
+                <li><a href="#platos-pasta"> Pastas</a></li>
+                <li><a href="#pizzas"> Pizzas</a></li>
+            </ul>
+
+            <a href="carrito.html" class="cart-link">
+                <i>Ir al carrito</i>
+                <span id="cart-count">0</span>
+                
+            </a>
+        </div>
+    </nav>
+
+    <main>
+
+        <!-- Contenido dinámico -->
+
+        <section id="bebidas" class="menu-category">
+            <h2 class="category-title">Bebidas</h2>
+            <div id="bebidas-container" class="menu-items">
+                <!-- Los elementos se cargan dinámicamente con JavaScript -->
+            </div>
+        </section>
+
+
+        <section id="entrantes" class="menu-category">
+            <h2 class="category-title">Entrantes</h2>
+            <div id="entrantes-container" class="menu-items">
+                <!-- Los elementos se cargan dinámicamente con JavaScript -->
+            </div>
+        </section>
+
+        <section id="frituras" class="menu-category">
+            <h2 class="category-title">Frituras</h2>
+            <div id="frituras-container" class="menu-items">
+                <!-- Los elementos se cargan dinámicamente con JavaScript -->
+            </div>
+        </section>
+
+        <section id="platos-pasta" class="menu-category">
+            <h2 class="category-title">Platos de Pasta</h2>
+            <div id="pastas-container" class="menu-items">
+                <!-- Los elementos se cargan dinámicamente con JavaScript -->
+            </div>
+        </section>
+
+
+        <section id="pizzas" class="menu-category">
+            <h2 class="category-title">Pizzas</h2>
+            <div id="pizzas-container" class="menu-items">
+                <!-- Los elementos se cargan dinámicamente con JavaScript -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Pie común -->
+
+    <footer>
+        <p>&copy; 2025 Restaurante - The Italian Gold Garden - Todos los derechos reservados</p>
+    </footer>
+
+    <!-- Modal de carga -->
+    <div id="loading-modal" class="loading-modal">
+        <div class="loading-content">
+            <div class="spinner"></div> <!-- Animación-->
+            <p>Cargando menú...</p>
+        </div>
+    </div>
+
+    <script>
+
+        'use strict';
+
+        // Variables Globales
+        let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+        let menuData = {};
+
+        // Conexión Socket
+        const socket = io('http://localhost:3000');
+
+        socket.on('connect', () => {
+            console.log('Conectado al servidor WebSocket');
+        });
+
+        // Mostrar alerta y vaciar carrito
+        socket.on('actualizacionEstado', (data) => {
+            alert(`Estado del pedido ${data.pedidoId}: ${data.estado}`);
+            if (data.estado === 'entregado') {
+                localStorage.removeItem('carrito');
+                carrito = [];
+                updateCartCount();
+            }
+        });
+
+        // Elementos del DOM
+        const loadingModal = document.getElementById('loading-modal');
+        const cartCountElement = document.getElementById('cart-count');
+
+        //Mostrar Modal
+        function showLoading() {
+            loadingModal.style.display = 'flex';
+        }
+
+        // Oculta el Modal
+        function hideLoading() {
+            loadingModal.style.display = 'none';
+        }
+
+        // Actualizar contador
+        function updateCartCount() {
+            const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+            cartCountElement.textContent = totalItems;
+        }
+
+        // Guardar carrito en localStorage
+        function saveCart() {
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+        }
+
+        // Actualizar cantidad mostrada de un item
+        function updateElement(itemId, newQuantity) {
+
+            const quantityElement = document.getElementById(`quantity-${itemId}`);
+
+            if (quantityElement) {
+                quantityElement.textContent = newQuantity;
+            }
+
+            const minusButton = document.querySelector(
+                `.menu-item[data-id="${itemId}"].minus`
+            );
+
+            if (minusButton) {
+                // Deshabilita el botón
+                minusButton.disabled = newQuantity <= 0;
+                minusButton.style.opacity = newQuantity <= 0 ? '0.5' : '1';
+            }
+
+            updateCartCount();
+
+        }
+
+        // Ajustar la Cantidad del carrto
+        function adjustQuantity(itemId, change) {
+            const idNum = typeof itemId === 'string' ? parseInt(itemId, 10) : itemId;
+            const item = menuData.allItems?.find(i => i.id === idNum);
+            if (!item) return;
+
+            const cartItemIndex = carrito.findIndex(i => i.id === idNum);
+            const currentQuantity = cartItemIndex >= 0 ? carrito[cartItemIndex].cantidad : 0;
+            // No permite cantidades negativas
+            let newQuantity = Math.max(0, currentQuantity + change);
+
+            if (newQuantity === 0) {
+                //Elimina si la cantidad llega a 0
+                if (cartItemIndex >= 0) {
+                    carrito.splice(cartItemIndex, 1);
+                }
+            } else {
+                // Actualiza o agrega
+                if (cartItemIndex >= 0) {
+                    carrito[cartItemIndex].cantidad = newQuantity;
+                } else {
+                    carrito.push({
+
+                        id: item.id,
+                        nombre: item.nombre,
+                        precio: item.precio,
+                        imagen: item.imagen,
+                        cantidad: newQuantity
+
+                    });
+                }
+            }
+
+            saveCart();
+            updateElement(idNum, newQuantity);
+
+        }
+
+        // Añadir al carrito 
+        function addToCart(itemId) {
+            adjustQuantity(itemId, 1);
+
+            // Animación al añadir productos
+            const itemElement = document.querySelector(`.menu-item[data-id="${itemId}"]`);
+
+            if (itemElement) {
+                itemElement.classList.add('item-added');
+                setTimeout(() => {
+                    itemElement.classList.remove('item-added');
+                }, 500);
+            }
+        }
+
+        // Renderizar una categoría de platos
+        function renderCategory(categoryId, items) {
+
+            const container = document.getElementById(`${categoryId}-container`);
+            if (!container || !items) return;
+
+            // Generar y añadir html de los platos
+            container.innerHTML = items.map(item => {
+                const itemInCart = carrito.find(cartItem => cartItem.id === item.id);
+                const currentQuantity = itemInCart ? itemInCart.cantidad : 0;
+
+                return `<div class="menu-item" data-id="${item.id}">
+                            <div class="item-image">
+                                <img src="${item.imagen}" alt=${item.nombre}
+                                onerror="this.src='img/placeholder-food.jpg'">
+                            </div>
+                            <div class="item-content">
+                                <div class="item-header">
+                                <h3 class="item-name">${item.nombre}</h3>
+                                <span class="item-price">${Number(item.precio).toFixed(2)}€</span>
+                            </div>
+                            ${item.descripcion ? `<p class="item-description">${item.descripcion}</p>` : ''}
+
+                            <div class="item-actions">
+                            <div class="quantity-control">
+                                <button class="quantity-btn minus" onclick="adjustQuantity('${item.id}', -1)" 
+                                    ${currentQuantity <= 0 ? 'disabled style="opacity:0.5"' : ''}>
+                                    -
+                                </button>
+                                <span class="quantity" id="quantity-${item.id}">${currentQuantity}</span>
+                                <button class="quantity-btn plus" onclick="adjustQuantity('${item.id}', 1)">
+                                    +
+                                </button>
+                            </div>
+                            <button class="add-to-cart" onclick="addToCart('${item.id}')">
+                                Añadir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        // Renderizar menú
+        function renderMenu() {
+
+            renderCategory('bebidas', menuData.bebidas);
+            renderCategory('entrantes', menuData.entrantes);
+            renderCategory('frituras', menuData.frituras);
+            renderCategory('pastas', menuData.pastas);
+            renderCategory('pizzas', menuData.pizzas);
+
+        }
+
+        // Cargar menú desde el servidor
+        async function loadMenu() {
+
+            // Mostrar el modal de carga
+            showLoading();
+
+            try {
+
+                // Petición al server.js
+                const response = await fetch('/api/menu');
+
+                // En caso de una respuesta fallida
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, ${errorText}`);
+                }
+
+                const data = await response.json();
+                menuData = data;
+                renderMenu();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar el menú. Por favor, recarga la pagina.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Verificar estado del pedido (para usuarios que regresan)
+        async function checkOrderStatus() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pedidoId = urlParams.get('pedidoId');
+
+            if (pedidoId) {
+                try {
+                    const response = await fetch(`/api/pedidos/${pedidoId}/estado`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.estado === 'entregado') {
+                            localStorage.removeItem('carrito');
+                            carrito = [];
+                            updateCartCount();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al verificar estado del pedido:', error);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCartCount();
+
+            // Cargar menú desde el servidor
+            loadMenu();
+        });
+
+    </script>
+
+</body>
+
+</html>

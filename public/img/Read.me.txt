@@ -1,0 +1,1 @@
+Specifications for the images: 130 px height and width.
